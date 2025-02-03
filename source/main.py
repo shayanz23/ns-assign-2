@@ -137,7 +137,7 @@ if __name__ == "__main__":
     global_packet_limit = args.count
 
     if args.interface.lower() == "any":
-        capture_on_all_interfaces(args.filter, args.count)
+        capture_on_all_interfaces(args.filter)
     else:
         if has_global_ip(args.interface):
             try:
