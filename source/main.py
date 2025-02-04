@@ -27,11 +27,11 @@ def packet_callback(packet):
             print(f"\nCaptured Packet {packet_counter}:")
             raw_data = bytes(packet)
             hex_data = raw_data.hex()
-            ether_type, payload = parse_ethernet_header(hex_data)
+            parse_ethernet_header(hex_data)
 
-            # Stop capturing if the limit is reached
-            if packet_counter >= global_packet_limit:
-                stop_event.set()
+        # Stop capturing if the limit is reached
+        if packet_counter >= global_packet_limit:
+            stop_event.set()
 
 # Function to check if an interface is a loopback interface
 def interface_is_loopback(interface):
@@ -135,7 +135,9 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     global_packet_limit = args.count
-
+    
+    if (args.filter.lower() == "dns"):
+        args.filter = "udp and port 53"
     if args.interface.lower() == "any":
         capture_on_all_interfaces(args.filter)
     else:

@@ -47,10 +47,10 @@ def parse_ip_header(hex_data):
     print(f"  {'Header Length:':<25} {hex_data[1:2]:<20} | {header_length} bytes")
     print(f"  {'Total Length:':<25} {hex_data[4:8]:<20} | {total_length}")
     print(f"  {'Flags & Frag Offset:':<25} {hex_data[12:16]:<20} | {flags_frags_offset}")
-    print(f"    {'Reserved:':<25} | {reserved_flag}")
-    print(f"    {'DF:':<25} | {df_flag}")
-    print(f"    {'MF:':<25} | {mf_flag}")
-    print(f"    {'Fragment Offset:':<25} | {fragment_offset}")
+    print(f"    {'Reserved:':<25} {reserved_flag}")
+    print(f"    {'DF:':<25} {df_flag}")
+    print(f"    {'MF:':<25} {mf_flag}")
+    print(f"    {'Fragment Offset:':<25} {fragment_offset}")
     print(f"  {'Protocol:':<25} {hex_data[18:20]:<20} | {protocol_type}")
     print(f"  {'Source IP:':<25} {hex_data[24:32]:<20} | {src_ip}")
     print(f"  {'Destination IP:':<25} {hex_data[32:40]:<20} | {dst_ip}")
@@ -99,38 +99,76 @@ def parse_tcp_header(hex_data):
     syn_flag = (flags >> 1) & 0x1
     fin_flag = flags & 0x1
     print("TCP Header:")
-    print(f"  {'Source Port:':<20} {hex_data[0:4]:<20} | {src_port}")
-    print(f"  {'Destination Port:':<20} {hex_data[4:8]:<20} | {dst_port}")
-    print(f"  {'Sequence Number:':<20} {hex_data[8:16]:<20} | {seq_num}")
-    print(f"  {'Acknowledgment Number:':<20} {hex_data[16:24]:<20} | {ack_num}")
-    print(f"  {'Data Offset:':<20} {data_offset:<20} | {data_offset_bytes} bytes")
-    print(f"  {'Reserved:':<20} {bin(reserved):<20} | {reserved}")
+    print(f"  {'Source Port:':<25} {hex_data[0:4]:<20} | {src_port}")
+    print(f"  {'Destination Port:':<25} {hex_data[4:8]:<20} | {dst_port}")
+    print(f"  {'Sequence Number:':<25} {hex_data[8:16]:<20} | {seq_num}")
+    print(f"  {'Acknowledgment Number:':<25} {hex_data[16:24]:<20} | {ack_num}")
+    print(f"  {'Data Offset:':<25} {data_offset:<20} | {data_offset_bytes} bytes")
+    print(f"  {'Reserved:':<25} {bin(reserved):<20} | {reserved}")
     print(f"  {'Flags:':<25} {bin(flags):<20} | {flags}")
-    print(f"    {'NS:':<25} {ns_flag}")
-    print(f"    {'CWR:':<25} {cwr_flag}")
-    print(f"    {'ECE:':<25} {ece_flag}")
-    print(f"    {'URG:':<25} {urg_flag}")
-    print(f"    {'ACK:':<25} {ack_flag}")
-    print(f"    {'PSH:':<25} {psh_flag}")
-    print(f"    {'RST:':<25} {rst_flag}")
-    print(f"    {'SYN:':<25} {syn_flag}")
-    print(f"    {'FIN:':<25} {fin_flag}")
-    print(f"  {'Window Size:':<20} {hex_data[28:32]:<20} | {window}")
-    print(f"  {'Checksum:':<20} {hex_data[32:36]:<20} | {checksum}")
-    print(f"  {'Urgent Pointer:':<20} {hex_data[36:40]:<20} | {urgent_pointer}")
-    print(f"  {'Payload (hex):':<20} {hex_data[40:]}")
+    print(f"    {'NS:':<20} {ns_flag}")
+    print(f"    {'CWR:':<20} {cwr_flag}")
+    print(f"    {'ECE:':<20} {ece_flag}")
+    print(f"    {'URG:':<20} {urg_flag}")
+    print(f"    {'ACK:':<20} {ack_flag}")
+    print(f"    {'PSH:':<20} {psh_flag}")
+    print(f"    {'RST:':<20} {rst_flag}")
+    print(f"    {'SYN:':<20} {syn_flag}")
+    print(f"    {'FIN:':<20} {fin_flag}")
+    print(f"  {'Window Size:':<25} {hex_data[28:32]:<20} | {window}")
+    print(f"  {'Checksum:':<25} {hex_data[32:36]:<20} | {checksum}")
+    print(f"  {'Urgent Pointer:':<25} {hex_data[36:40]:<20} | {urgent_pointer}")
+    print(f"  {'Payload (hex):':<25} {hex_data[40:]}")
 
 def parse_udp_header(hex_data):
-    src_port = int(hex_data[0:4], 16)
+    src_port = int(hex_data[:4], 16)
     dst_port = int(hex_data[4:8], 16)
     length = int(hex_data[8:12], 16)
     checksum = int(hex_data[12:16], 16)
     print("UDP Header:")
-    print(f"  {'Source Port:':<20} {hex_data[0:4]:<20} | {src_port}")
+    print(f"  {'Source Port:':<20} {hex_data[:4]:<20} | {src_port}")
     print(f"  {'Destination Port:':<20} {hex_data[4:8]:<20} | {dst_port}")
     print(f"  {'Length:':<20} {hex_data[8:12]:<20} | {length}")
     print(f"  {'Checksum:':<20} {hex_data[12:16]:<20} | {checksum}")
     print(f"  Payload (hex): {hex_data[16:]}")
+
+    if (dst_port == 53 or src_port == 53):
+        parse_dns_header(hex_data[16:])
+    else:
+        print("No parser available for this port.")
+
+def parse_dns_header(hex_data):
+    id = int(hex_data[:4], 16)
+    flags = int(hex_data[4:8], 16)
+    qdcount = int(hex_data[8:12], 16)
+    ancount = int(hex_data[12:16], 16)
+    nscount = int(hex_data[16:20], 16)
+    arcount = int(hex_data[20:24], 16)
+    qr = (flags >> 15) & 0x1
+    opcode = (flags >> 11) & 0xF
+    aa = (flags >> 10) & 0x1
+    tc = (flags >> 9) & 0x1
+    rd = (flags >> 8) & 0x1
+    ra = (flags >> 7) & 0x1
+    z = (flags >> 4) & 0x7
+    rcode = flags & 0xF
+    print("DNS Header:")
+    print(f"  {'Transaction ID:':<20} {hex_data[:4]:<20} | {id}")
+    print(f"  {'Flags:':<20} {hex_data[4:8]:<20} | {flags}")
+    print(f"  {'  QR:':<20} {'':<20} | {qr}")
+    print(f"  {'  Opcode:':<20} {'':<20} | {opcode}")
+    print(f"  {'  AA:':<20} {'':<20} | {aa}")
+    print(f"  {'  TC:':<20} {'':<20} | {tc}")
+    print(f"  {'  RD:':<20} {'':<20} | {rd}")
+    print(f"  {'  RA:':<20} {'':<20} | {ra}")
+    print(f"  {'  Z:':<20} {'':<20} | {z}")
+    print(f"  {'  RCODE:':<20} {'':<20} | {rcode}")
+    print(f"  {'Questions:':<20} {hex_data[8:12]:<20} | {qdcount}")
+    print(f"  {'Answer RRs:':<20} {hex_data[12:16]:<20} | {ancount}")
+    print(f"  {'Authority RRs:':<20} {hex_data[16:20]:<20} | {nscount}")
+    print(f"  {'Additional RRs:':<20} {hex_data[20:24]:<20} | {arcount}")
+    print(f"  Payload (hex): {hex_data[24:]}")
+    
 
 # Parse ARP header
 def parse_arp_header(hex_data):

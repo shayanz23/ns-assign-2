@@ -1,0 +1,88 @@
+digraph PacketParserStateDiagram {
+  rankdir=TB;
+  node [fontname="Helvetica"];
+
+  start [label="Start", shape=circle, style=filled, fillcolor=lightgray];
+  parse_args [label="Parse Arguments\n(interface, filter, count)", shape=box];
+  capture_on_all_interfaces [label="Start threads for interfaces", shape=box];
+  capture_packets [label="Packet Capture", shape=box];
+  pkt_callback [label="Packet Callback,\nincrement counter", shape=box];
+  parse_eth [label="Parse, print ethernet header", shape=box];
+
+  has_global_ip [label="Has global ip?", shape="diamond"];
+  has_global_ip_other [label="Has global ip?", shape="diamond"];
+  is_loopback [label="Loopback?", shape="diamond"];
+  interface_decision [label="which\ninterface?", shape=diamond];
+  eth_decision [label="EtherType?", shape=diamond];
+  count_decision [label="Counter >= Count?", shape=diamond];
+
+
+  arp [label="ARP Header\n(parse_arp_header)", shape=box];
+  ipv4 [label="Parse, print \nIPv4 header", shape=box];
+  unknown [label="Unknown EtherType\n(No parser available)", shape=box];
+
+
+  ip_decision [label="Protocol Type?", shape=diamond];
+
+
+  icmp [label="Parse, print \nICMP header", shape=box];
+  tcp [label="Parse, print \nTCP header", shape=box];
+  udp [label="Parse, print \nUDP header", shape=box];
+  no_proto [label="No Parser for\nProtocol", shape=box];
+
+
+  udp_decision [label="Port 53?", shape=diamond];
+  dns [label="Parse, print \nDNS header", shape=box];
+  no_port_parse [label="No parser \nfor port", shape=box];
+
+
+  done [label="Done", shape=doublecircle, style=filled, fillcolor=lightblue];
+
+
+  start -> parse_args;
+  parse_args -> interface_decision;
+  interface_decision -> capture_on_all_interfaces [label="any"];
+  interface_decision -> has_global_ip_other [label="Other"];
+  has_global_ip_other -> done [label="No"];
+  has_global_ip_other -> capture_packets [label="Yes"];
+  capture_on_all_interfaces -> is_loopback;
+  is_loopback -> has_global_ip [label="No"];
+  is_loopback -> capture_on_all_interfaces [label="Yes"];
+  has_global_ip -> capture_packets [label="Yes"];
+  has_global_ip -> capture_on_all_interfaces [label="No"];
+  capture_packets -> pkt_callback [label="Packet Received"];
+  pkt_callback -> parse_eth [label="Call Parser"];
+
+
+  parse_eth -> eth_decision;
+  eth_decision -> arp [label="ARP"];
+  eth_decision -> ipv4 [label="IPv4"];
+  eth_decision -> unknown [label="Other"];
+
+
+  ipv4 -> ip_decision;
+  ip_decision -> icmp [label="ICMP"];
+  ip_decision -> tcp [label="TCP"];
+  ip_decision -> udp [label="UDP"];
+  ip_decision -> no_proto[label="Other"];
+
+
+  udp -> udp_decision;
+  udp_decision -> dns [label="Yes"];
+  udp_decision -> no_port_parse [label="Other"];
+
+
+  no_port_parse -> count_decision;
+  arp -> count_decision;
+  icmp -> count_decision;
+  tcp -> count_decision;
+  no_proto -> count_decision;
+  dns -> count_decision;
+  unknown -> count_decision;
+
+  count_decision -> done [label="Yes"];
+  count_decision -> capture_packets [label="No"];
+
+  size="25,25";
+
+}
